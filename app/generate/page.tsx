@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 
 export default function GeneratePage() {
   const router = useRouter()
-  const { cv, jobDescription, setCV, setJobDescription, setGeneratedContent, setIsLoading } = useAppStore()
+  const { cv, jobDescription, isLoading, setCV, setJobDescription, setGeneratedContent, setIsLoading } = useAppStore()
   const [errors, setErrors] = useState<{ cv?: string; jobDescription?: string }>({})
 
   const validateInputs = () => {
@@ -128,9 +128,9 @@ export default function GeneratePage() {
             <button
               onClick={handleGenerate}
               className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!cv || !jobDescription}
+              disabled={!cv || !jobDescription || isLoading}
             >
-              Generate Application Pack
+              {isLoading ? 'Generating...' : 'Generate Application Pack'}
             </button>
           </div>
         </div>

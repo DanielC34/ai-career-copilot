@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "AI-powered job application materials generator",
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
     "next": "^16.0.3",
     "openai": "^6.9.0",
     "react": "^19.2.0",

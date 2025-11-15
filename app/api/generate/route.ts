@@ -80,6 +80,30 @@ Ensure all text is professional, specific, and actionable. The rewritten CV shou
 
     const generatedContent = JSON.parse(content)
 
+    // Validate the response structure
+    const requiredFields = ['rewrittenCV', 'coverLetter', 'skillsMatch', 'skillsGap', 'interviewQuestions', 'summary']
+    const missingFields = requiredFields.filter(field => !(field in generatedContent))
+    
+    if (missingFields.length > 0) {
+      throw new Error(`Invalid response from AI: missing fields ${missingFields.join(', ')}`)
+    }
+
+    // Validate array fields
+    if (!Array.isArray(generatedContent.skillsMatch)) {
+      generatedContent.skillsMatch = []
+    }
+    if (!Array.isArray(generatedContent.skillsGap)) {
+      generatedContent.skillsGap = []
+    }
+    if (!Array.isArray(generatedContent.interviewQuestions)) {
+      generatedContent.interviewQuestions = []
+    }
+
+    // Ensure string fields are strings
+    generatedContent.rewrittenCV = String(generatedContent.rewrittenCV || '')
+    generatedContent.coverLetter = String(generatedContent.coverLetter || '')
+    generatedContent.summary = String(generatedContent.summary || '')
+
     return NextResponse.json(generatedContent)
   } catch (error) {
     console.error('Error generating content:', error)
