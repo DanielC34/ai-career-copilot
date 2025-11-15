@@ -1,63 +1,52 @@
-import Link from 'next/link'
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Navbar } from "@/components/Navbar"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            AI Career Copilot
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Navbar />
+
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+        <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
+            Craft Your Perfect Job Application with AI.
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8">
-            Generate tailored job application materials in seconds
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            Generate tailored resumes, cover letters, and more in seconds.
           </p>
-          <p className="text-lg text-gray-700 mb-12 max-w-2xl mx-auto">
-            Upload your CV and paste a job description. Our AI will create a customized 
-            application package including a rewritten CV, cover letter, skills analysis, 
-            and interview preparation questions.
-          </p>
-          
-          <div className="bg-white rounded-lg shadow-xl p-8 mb-12">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">How it works</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="bg-blue-100 text-blue-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                  1
-                </div>
-                <h3 className="font-semibold text-gray-800 mb-2">Paste Your CV</h3>
-                <p className="text-gray-600 text-sm">
-                  Enter your existing CV text into our system
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-purple-100 text-purple-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                  2
-                </div>
-                <h3 className="font-semibold text-gray-800 mb-2">Add Job Description</h3>
-                <p className="text-gray-600 text-sm">
-                  Paste the job posting you want to apply for
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-green-100 text-green-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-                  3
-                </div>
-                <h3 className="font-semibold text-gray-800 mb-2">Get AI Results</h3>
-                <p className="text-gray-600 text-sm">
-                  Receive tailored application materials instantly
-                </p>
-              </div>
-            </div>
+          <div className="pt-2 sm:pt-4">
+            <Link href="/generate">
+              <Button className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium rounded-lg">
+                Get Started
+              </Button>
+            </Link>
           </div>
-          
-          <Link 
-            href="/generate" 
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-8 py-4 rounded-lg shadow-lg transition-colors duration-200"
-          >
-            Get Started
-          </Link>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-12 mb-4 sm:mb-6">
+            <a
+              href="#privacy"
+              className="text-sm sm:text-base text-gray-600 hover:text-gray-900"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="#terms"
+              className="text-sm sm:text-base text-gray-600 hover:text-gray-900"
+            >
+              Terms of Service
+            </a>
+          </div>
+          <div className="text-center text-gray-500 text-xs sm:text-sm">
+            © 2025 AI Career Copilot. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
