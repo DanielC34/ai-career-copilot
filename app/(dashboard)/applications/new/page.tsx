@@ -14,6 +14,8 @@ export default function ApplicationGenerator() {
     const router = useRouter();
     const [cvText, setCvText] = useState("");
     const [jobDescription, setJobDescription] = useState("");
+    const [jobTitle, setJobTitle] = useState("");
+    const [companyName, setCompanyName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState("paste");
     const [uploadMode, setUploadMode] = useState<"new" | "existing">("new");
@@ -33,8 +35,8 @@ export default function ApplicationGenerator() {
                 body: JSON.stringify({
                     originalCV: cvText,
                     jobDescription,
-                    jobTitle: 'Software Engineer',
-                    companyName: 'Tech Company'
+                    jobTitle: jobTitle || 'Software Engineer', // Fallback if empty
+                    companyName: companyName || 'Tech Company' // Fallback if empty
                 }),
             });
 
@@ -132,6 +134,34 @@ export default function ApplicationGenerator() {
                             </div>
                         </TabsContent>
                     </Tabs>
+                </div>
+
+                {/* Job Details Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label className="block text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Job Title
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Senior Software Engineer"
+                            value={jobTitle}
+                            onChange={(e) => setJobTitle(e.target.value)}
+                            className="w-full p-3 bg-white border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Company Name
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. TechCorp Inc."
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            className="w-full p-3 bg-white border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        />
+                    </div>
                 </div>
 
                 {/* Job Description Section */}
