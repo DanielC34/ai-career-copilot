@@ -16,7 +16,7 @@ export default function Home() {
             Generate tailored resumes, cover letters, and more in seconds.
           </p>
           <div className="pt-2 sm:pt-4">
-            <Link href="/generate">
+            <Link href="/applications/new">
               <Button className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium rounded-lg">
                 Get Started
               </Button>
