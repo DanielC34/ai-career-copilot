@@ -44,15 +44,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async session({ session, token }) {
             console.log('Session callback:', { tokenSub: token.sub, sessionUser: !!session.user });
             if (token.sub && session.user) {
-                // Add user ID to session
+                // Add user ID and name to session
                 // @ts-expect-error - Adding id to session user
                 session.user.id = token.sub;
+                // @ts-expect-error - Adding name from token
+                if (token.name) session.user.name = token.name;
             }
             return session;
         },
         async jwt({ token, user }) {
             if (user) {
                 console.log('JWT callback - user logged in:', user.email);
+                // Add user name to token for session
+                token.name = user.name;
             }
             return token;
         }
