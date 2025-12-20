@@ -79,11 +79,28 @@ export default function ResumesPage() {
                 </Link>
             </div>
 
+
             {loading ? (
-                <div className="flex justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="p-3 bg-gray-100 rounded-lg animate-pulse w-12 h-12" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4" />
+                                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
+                                </div>
+                            </div>
+                            <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3 mb-4" />
+                            <div className="flex gap-2">
+                                <div className="h-9 bg-gray-200 rounded animate-pulse flex-1" />
+                                <div className="h-9 bg-gray-200 rounded animate-pulse w-9" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : resumes.length === 0 ? (
+
                 <div className="text-center py-12 bg-white rounded-lg border border-gray-200 border-dashed">
                     <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No resumes yet</h3>
