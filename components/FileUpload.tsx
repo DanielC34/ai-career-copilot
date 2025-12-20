@@ -90,12 +90,20 @@ export default function FileUpload({ onUploadComplete, maxSizeMB = 10 }: FileUpl
             clearInterval(progressInterval);
             setUploadProgress(100);
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Upload failed');
+            // Safely try to parse JSON
+            let data;
+            const textResponse = await response.text();
+
+            try {
+                data = JSON.parse(textResponse);
+            } catch (e) {
+                console.error('Failed to parse response:', textResponse);
+                throw new Error(`Server error (${response.status}): ${response.statusText}`);
             }
 
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || `Upload failed with status ${response.status}`);
+            }
 
             if (data.success) {
                 setUploadComplete(true);
@@ -127,8 +135,8 @@ export default function FileUpload({ onUploadComplete, maxSizeMB = 10 }: FileUpl
             {!file ? (
                 <div
                     className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 hover:border-gray-400'
                         }`}
                     onDragEnter={handleDrag}
                     onDragOver={handleDrag}

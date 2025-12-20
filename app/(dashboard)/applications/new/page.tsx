@@ -182,7 +182,7 @@ export default function ApplicationGenerator() {
                     <Button
                         onClick={handleGenerate}
                         size="lg"
-                        className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg bg-blue-500 hover:bg-blue-600 rounded-lg"
+                        className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 transition-colors duration-200 rounded-lg shadow-sm hover:shadow-md"
                         disabled={!cvText || !jobDescription || isSubmitting}
                     >
                         {isSubmitting ? (

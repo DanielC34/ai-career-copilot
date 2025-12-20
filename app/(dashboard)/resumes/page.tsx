@@ -46,7 +46,7 @@ export default function ResumesPage() {
 
         try {
             // TODO: Implement delete endpoint in API
-            toast.info('Delete functionality coming soon');
+            toast('Delete functionality coming soon', { icon: 'ℹ️' });
         } catch (error) {
             toast.error('Failed to delete resume');
         }
@@ -114,7 +114,7 @@ export default function ResumesPage() {
                     {resumes.map((resume) => (
                         <div
                             key={resume._id}
-                            className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                            className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200"
                         >
                             <div className="flex items-start gap-4 mb-4">
                                 <div className="p-3 bg-blue-50 rounded-lg">

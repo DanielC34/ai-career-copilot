@@ -47,7 +47,11 @@ export const supabaseServiceClient = supabaseServiceKey
 
 // Warn if service client is not available (non-critical for development)
 if (!supabaseServiceClient) {
-    console.warn('SUPABASE_SERVICE_KEY not set - upload functionality will be limited');
+    console.warn('⚠️  SUPABASE_SERVICE_KEY not set - upload functionality will be limited');
+} else {
+    console.log('✓ Supabase service client initialized successfully');
+    console.log('  URL:', supabaseUrl);
+    console.log('  Service key length:', supabaseServiceKey?.length);
 }
 
 /**

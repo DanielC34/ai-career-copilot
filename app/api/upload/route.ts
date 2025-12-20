@@ -34,16 +34,38 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
             );
         }
 
+        console.log('[Upload API] Request received');
+
+        // Log Headers (safely)
+        const headers = Object.fromEntries(req.headers.entries());
+        console.log('[Upload API] Request Headers:', {
+            'content-type': headers['content-type'],
+            'content-length': headers['content-length'],
+            'user-agent': headers['user-agent']
+        });
+
         // 2. Parse form data
-        const formData = await request.formData();
+        const formData = await req.formData();
+
+        // Log FormData keys
+        console.log('[Upload API] FormData keys:', Array.from(formData.keys()));
+
         const file = formData.get('file') as File | null;
 
         if (!file) {
+            console.error('[Upload API] No file found in FormData');
             return NextResponse.json(
-                { success: false, error: 'No file provided' },
+                { success: false, error: 'No file uploaded' },
                 { status: 400 }
             );
         }
+
+        console.log('[Upload API] File object received:', {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified
+        });
 
         // 3. Validate file
         const validation = validateFile(file);
@@ -57,9 +79,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         // 4. Upload to Supabase Storage
         // @ts-expect-error - session.user.id is added in auth.ts
         const userId = session.user.id as string;
+
+        console.log('[Upload API] Calling uploadResume with userId:', userId);
         const uploadResult = await uploadResume(file, userId);
+        console.log('[Upload API] Upload result:', uploadResult);
 
         if (!uploadResult.success || !uploadResult.path) {
+            console.error('[Upload API] Upload failed:', uploadResult.error);
             return NextResponse.json(
                 { success: false, error: uploadResult.error || 'Upload failed' },
                 { status: 500 }
@@ -79,6 +105,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
             uploadedAt: new Date(),
             extractedText: null,
             processed: false,
+            // New ATS fields
+            structuredData: null,
+            atsScore: null,
+            lastEditedAt: null,
+            selectedTemplate: 'modern-clean', // Default template
         });
 
         // 6. Return success response
@@ -115,8 +146,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
         await connectToDatabase();
 
-        // @ts-expect-error - session.user.id is added in auth.ts
-        const resumes = await Resume.find({ userId: session.user.id })
+        const resumes = await Resume.find({ userId: session.user.id as string })
             .sort({ uploadedAt: -1 })
             .select('fileName size mimeType uploadedAt publicUrl processed');
 
