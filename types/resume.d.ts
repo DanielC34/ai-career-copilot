@@ -129,12 +129,13 @@ export interface ResumeMeta {
     size: number;
     mimeType: AllowedMime;
     uploadedAt: Date;
-    extractedText?: string | null; // Backward compatibility
     processed: boolean;
 
     // New structured data fields
     structuredData?: ResumeStructuredData | null;
+    analysis?: ATSAnalysis | null;
     atsScore?: number; // 0-100, ATS compatibility score
+    rawText?: string; // Extracted raw text for generation
     lastEditedAt?: Date;
     selectedTemplate?: ATSTemplateId;
     status: 'processing' | 'completed' | 'failed';

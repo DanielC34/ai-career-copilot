@@ -20,7 +20,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
 import Resume from '@/models/Resume';
-import { uploadResume, validateFile } from '@/lib/storage';
 import { supabaseServiceClient, STORAGE_BUCKET } from '@/lib/supabase';
 import type { UploadResponse } from '@/types/resume';
 

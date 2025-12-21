@@ -17,8 +17,9 @@ export default function ApplicationGenerator() {
     const [jobTitle, setJobTitle] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [activeTab, setActiveTab] = useState("paste");
+    const [activeTab, setActiveTab] = useState("upload");
     const [uploadMode, setUploadMode] = useState<"new" | "existing">("new");
+    const [isFetchingResume, setIsFetchingResume] = useState(false);
 
     const handleGenerate = async () => {
         if (!cvText || !jobDescription) {
@@ -62,14 +63,41 @@ export default function ApplicationGenerator() {
         }
     };
 
-    const handleUploadComplete = (fileId: string, url: string, fileName: string) => {
-        toast.success(`${fileName} uploaded successfully! Please paste your CV text below.`);
-        setActiveTab("paste"); //Switch to paste tab
+    const fetchResumeText = async (id: string) => {
+        setIsFetchingResume(true);
+        try {
+            const response = await fetch(`/api/resumes/${id}`);
+            if (!response.ok) throw new Error('Failed to fetch resume content');
+
+            const data = await response.json();
+            if (data.resume?.rawText) {
+                setCvText(data.resume.rawText);
+                return data.resume.rawText;
+            } else {
+                throw new Error('This resume has not been processed for text yet.');
+            }
+        } catch (error: any) {
+            console.error('[FetchResume] Failed:', error);
+            toast.error(error.message || 'Could not load resume text');
+            return null;
+        } finally {
+            setIsFetchingResume(false);
+        }
     };
 
-    const handleResumeSelect = (resume: any) => {
-        toast.success('Resume selected! Please paste your CV text below.');
-        setActiveTab("paste");
+    const handleUploadComplete = async (fileId: string, url: string, fileName: string) => {
+        toast.success(`${fileName} uploaded! Processing text...`);
+        // We set isFetchingResume to true to keep the button disabled while AI parses
+        setIsFetchingResume(true);
+    };
+
+    const handleProcessComplete = async (fileId: string) => {
+        await fetchResumeText(fileId);
+    };
+
+    const handleResumeSelect = async (resume: any) => {
+        toast.success('Resume selected!');
+        await fetchResumeText(resume._id);
     };
 
     return (
@@ -96,24 +124,24 @@ export default function ApplicationGenerator() {
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-4">
-                            <TabsTrigger value="paste" className="flex items-center gap-2">
+                            {/* <TabsTrigger value="paste" className="flex items-center gap-2">
                                 <FileText className="h-4 w-4" />
                                 Paste Text
-                            </TabsTrigger>
+                            </TabsTrigger> */}
                             <TabsTrigger value="upload" className="flex items-center gap-2">
                                 <UploadIcon className="h-4 w-4" />
                                 Upload File
                             </TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="paste" className="mt-0">
+                        {/* <TabsContent value="paste" className="mt-0">
                             <Textarea
                                 placeholder="Paste the full text of your CV or resume here..."
                                 value={cvText}
                                 onChange={(e) => setCvText(e.target.value)}
                                 className="min-h-[300px] sm:min-h-[350px] lg:min-h-[400px] resize-none bg-white border-gray-300 rounded-lg text-sm sm:text-base"
                             />
-                        </TabsContent>
+                        </TabsContent> */}
 
                         <TabsContent value="upload" className="mt-0">
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -124,7 +152,10 @@ export default function ApplicationGenerator() {
                                     </TabsList>
 
                                     <TabsContent value="new">
-                                        <FileUpload onUploadComplete={handleUploadComplete} />
+                                        <FileUpload
+                                            onUploadComplete={handleUploadComplete}
+                                            onProcessComplete={handleProcessComplete}
+                                        />
                                     </TabsContent>
 
                                     <TabsContent value="existing">
@@ -183,12 +214,12 @@ export default function ApplicationGenerator() {
                         onClick={handleGenerate}
                         size="lg"
                         className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-6 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 transition-colors duration-200 rounded-lg shadow-sm hover:shadow-md"
-                        disabled={!cvText || !jobDescription || isSubmitting}
+                        disabled={!cvText || !jobDescription || isSubmitting || isFetchingResume}
                     >
-                        {isSubmitting ? (
+                        {isSubmitting || isFetchingResume ? (
                             <>
                                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
-                                Creating Draft...
+                                {isFetchingResume ? 'Loading Resume...' : 'Creating Draft...'}
                             </>
                         ) : (
                             <>
