@@ -21,9 +21,10 @@ import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
 import Resume from '@/models/Resume';
 import { uploadResume, validateFile } from '@/lib/storage';
+import { supabaseServiceClient, STORAGE_BUCKET } from '@/lib/supabase';
 import type { UploadResponse } from '@/types/resume';
 
-export async function POST(request: NextRequest): Promise<NextResponse<UploadResponse>> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
         // 1. Authenticate user
         const session = await auth();
@@ -34,65 +35,78 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
             );
         }
 
-        // 2. Parse form data
-        const formData = await request.formData();
-        const file = formData.get('file') as File | null;
-
-        if (!file) {
-            return NextResponse.json(
-                { success: false, error: 'No file provided' },
-                { status: 400 }
-            );
-        }
-
-        // 3. Validate file
-        const validation = validateFile(file);
-        if (!validation.valid) {
-            return NextResponse.json(
-                { success: false, error: validation.error },
-                { status: 400 }
-            );
-        }
-
-        // 4. Upload to Supabase Storage
-        // @ts-expect-error - session.user.id is added in auth.ts
         const userId = session.user.id as string;
-        const uploadResult = await uploadResume(file, userId);
 
-        if (!uploadResult.success || !uploadResult.path) {
+        // 2. Parse JSON body (Step 4)
+        // We no longer accept raw files here.
+        const body = await request.json();
+        const { storagePath, fileName, size, mimeType } = body;
+
+        console.log('[Upload API] Received reference handoff:', {
+            storagePath,
+            fileName,
+            userId
+        });
+
+        if (!storagePath) {
             return NextResponse.json(
-                { success: false, error: uploadResult.error || 'Upload failed' },
-                { status: 500 }
+                { success: false, error: 'Storage path is required' },
+                { status: 400 }
             );
         }
 
-        // 5. Save metadata to MongoDB
+        // 3. Validate existence in Supabase (Scalability/Safety check)
+        // We check if the file actually exists where the client says it does
+        if (!supabaseServiceClient) {
+            throw new Error('Supabase service client not configured');
+        }
+
+        const { data: fileExists, error: listError } = await supabaseServiceClient.storage
+            .from(STORAGE_BUCKET)
+            .list(storagePath.split('/').slice(0, -1).join('/'), {
+                search: storagePath.split('/').pop()
+            });
+
+        if (listError || !fileExists || fileExists.length === 0) {
+            console.error('[Upload API] File validation failed:', listError || 'File not found in storage');
+            return NextResponse.json(
+                { success: false, error: 'Invalid file reference. File not found in storage.' },
+                { status: 400 }
+            );
+        }
+
+        // 4. Save metadata to MongoDB (The "Logbook")
         await connectToDatabase();
 
         const resume = await Resume.create({
             userId,
-            fileName: file.name,
-            storagePath: uploadResult.path,
-            publicUrl: uploadResult.url || null,
-            size: file.size,
-            mimeType: file.type,
+            fileName: fileName || 'Untitled Resume',
+            storagePath: storagePath,
+            publicUrl: null, // We keep it private for now
+            size: size || 0,
+            mimeType: mimeType || 'application/pdf',
             uploadedAt: new Date(),
-            extractedText: null,
             processed: false,
+            status: 'processing' // Immediate status response
         });
 
-        // 6. Return success response
+        console.log('[Upload API] Metadata saved. Resume ID:', resume._id);
+
+        // 5. Immediate response (Step 4 Requirement)
+        // We don't wait for AI or parsing here. 
+        // We respond immediately so the user doesn't wait for a slow request.
         return NextResponse.json(
             {
                 success: true,
+                status: 'processing',
                 fileId: resume._id.toString(),
-                url: uploadResult.url,
+                storagePath: resume.storagePath
             },
             { status: 201 }
         );
 
     } catch (error) {
-        console.error('Upload API error:', error);
+        console.error('[Upload API] Critical error:', error);
         return NextResponse.json(
             {
                 success: false,
@@ -115,8 +129,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
         await connectToDatabase();
 
-        // @ts-expect-error - session.user.id is added in auth.ts
-        const resumes = await Resume.find({ userId: session.user.id })
+        const resumes = await Resume.find({ userId: session.user.id as string })
             .sort({ uploadedAt: -1 })
             .select('fileName size mimeType uploadedAt publicUrl processed');
 

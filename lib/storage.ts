@@ -59,23 +59,39 @@ export async function uploadResume(
     file: File,
     userId: string
 ): Promise<{ success: boolean; path?: string; url?: string; error?: string }> {
+    console.log('[uploadResume] Starting upload process');
+    console.log('[uploadResume] File details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        userId
+    });
+
     if (!supabaseServiceClient) {
+        console.error('[uploadResume] ERROR: Supabase service client not configured');
         return { success: false, error: 'Supabase service client not configured' };
     }
 
     try {
         // Validate file
+        console.log('[uploadResume] Validating file...');
         const validation = validateFile(file);
         if (!validation.valid) {
+            console.error('[uploadResume] Validation failed:', validation.error);
             return { success: false, error: validation.error };
         }
+        console.log('[uploadResume] File validation passed');
 
         // Create unique filename with timestamp
         const timestamp = Date.now();
         const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const storagePath = `user_${userId}/${timestamp}_${sanitizedFileName}`;
 
+        console.log('[uploadResume] Storage path:', storagePath);
+        console.log('[uploadResume] Bucket name:', STORAGE_BUCKET);
+
         // Upload to Supabase
+        console.log('[uploadResume] Attempting upload to Supabase...');
         const { data, error } = await supabaseServiceClient.storage
             .from(STORAGE_BUCKET)
             .upload(storagePath, file, {
@@ -84,14 +100,24 @@ export async function uploadResume(
             });
 
         if (error) {
-            console.error('Supabase upload error:', error);
+            console.error('[uploadResume] Supabase upload error:', {
+                message: error.message,
+                name: error.name,
+                statusCode: (error as any).statusCode,
+                error: error
+            });
             return { success: false, error: error.message };
         }
 
+        console.log('[uploadResume] Upload successful, data:', data);
+
         // Get public URL (or use signed URL for private buckets)
+        console.log('[uploadResume] Getting public URL...');
         const { data: urlData } = supabaseServiceClient.storage
             .from(STORAGE_BUCKET)
             .getPublicUrl(data.path);
+
+        console.log('[uploadResume] Public URL generated:', urlData.publicUrl);
 
         return {
             success: true,
@@ -99,10 +125,57 @@ export async function uploadResume(
             url: urlData.publicUrl,
         };
     } catch (error) {
-        console.error('Upload error:', error);
+        console.error('[uploadResume] Unexpected error during upload:');
+        console.error('[uploadResume] Error type:', typeof error);
+        console.error('[uploadResume] Error name:', (error as any)?.name);
+        console.error('[uploadResume] Error message:', (error as any)?.message);
+        console.error('[uploadResume] Error stack:', (error as any)?.stack);
+        console.error('[uploadResume] Full error object:', error);
+
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : 'Unknown upload error',
+        };
+    }
+}
+
+/**
+ * Generate a signed upload URL for a specific path
+ * This allows a client to upload a file directly to a specific path
+ * without needing RLS write permissions.
+ * 
+ * @param path - The storage path where the file will be uploaded
+ * @returns Object with token, path, and full URL
+ */
+export async function createSignedUploadUrl(
+    path: string
+): Promise<{ token: string; path: string; url: string; error?: string }> {
+    if (!supabaseServiceClient) {
+        return { token: '', path: '', url: '', error: 'Supabase service client not configured' };
+    }
+
+    try {
+        const { data, error } = await supabaseServiceClient.storage
+            .from(STORAGE_BUCKET)
+            .createSignedUploadUrl(path);
+
+        if (error) {
+            console.error('Error creating signed upload URL:', error);
+            return { token: '', path: '', url: '', error: error.message };
+        }
+
+        return {
+            token: data.token,
+            path: data.path,
+            url: data.signedUrl
+        };
+    } catch (error) {
+        console.error('Unexpected error creating signed upload URL:', error);
+        return {
+            token: '',
+            path: '',
+            url: '',
+            error: error instanceof Error ? error.message : 'Unknown error'
         };
     }
 }
@@ -168,6 +241,28 @@ export async function downloadResume(
         return data;
     } catch (error) {
         console.error('Download error:', error);
+        return null;
+    }
+}
+
+/**
+ * Fetch a resume file and return it as a Buffer (Step 5)
+ * Useful for server-side processing like AI or PDF parsing
+ * 
+ * @param path - Storage path of the file
+ * @returns Buffer or null if error
+ */
+export async function getResumeBuffer(
+    path: string
+): Promise<Buffer | null> {
+    const blob = await downloadResume(path);
+    if (!blob) return null;
+
+    try {
+        const arrayBuffer = await blob.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+    } catch (error) {
+        console.error('Error converting blob to buffer:', error);
         return null;
     }
 }

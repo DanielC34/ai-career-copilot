@@ -126,8 +126,30 @@ export default function ApplicationResults() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="mb-6 flex items-center gap-4">
+                    <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+                </div>
+
+                {/* Tabs Skeleton */}
+                <div className="mb-6">
+                    <div className="flex gap-2 mb-4">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Content Skeleton */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-1/4" />
+                    <div className="space-y-3">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                            <div key={i} className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${Math.random() * 30 + 70}%` }} />
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }

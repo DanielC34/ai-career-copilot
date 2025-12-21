@@ -89,7 +89,7 @@ export default function DashboardPage() {
                             href={`/applications/${app._id}`}
                             className="block group"
                         >
-                            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
+                            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 relative">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-2 bg-blue-50 rounded-lg">
                                         <FileText className="w-6 h-6 text-blue-600" />

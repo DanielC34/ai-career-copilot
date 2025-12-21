@@ -43,11 +43,36 @@ const ResumeSchema = new Schema<ResumeMeta>({
     },
     extractedText: {
         type: String,
-        default: null, // Will be populated later when AI processing is implemented
+        default: null, // Backward compatibility - raw text extraction
     },
     processed: {
         type: Boolean,
         default: false, // Flag to track if AI extraction has been done
+    },
+    // New fields for ATS functionality
+    structuredData: {
+        type: Schema.Types.Mixed, // Stores ResumeStructuredData as JSON
+        default: null,
+    },
+    atsScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: null, // ATS compatibility score (0-100)
+    },
+    lastEditedAt: {
+        type: Date,
+        default: null, // Track when user last edited the structured data
+    },
+    selectedTemplate: {
+        type: String,
+        enum: ['modern-clean', 'professional-classic', 'executive', 'technical', 'simple-ats'],
+        default: 'modern-clean', // Default ATS template
+    },
+    status: {
+        type: String,
+        enum: ['processing', 'completed', 'failed'],
+        default: 'processing',
     },
 });
 

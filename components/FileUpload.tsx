@@ -4,20 +4,27 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
+import { supabaseClient, STORAGE_BUCKET } from '@/lib/supabase';
 
 interface FileUploadProps {
-    onUploadComplete?: (fileId: string, url: string, fileName: string) => void;
+    onUploadComplete?: (fileId: string, storagePath: string, fileName: string) => void;
     maxSizeMB?: number;
 }
 
 export default function FileUpload({ onUploadComplete, maxSizeMB = 10 }: FileUploadProps) {
+    const { data: session } = useSession();
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadComplete, setUploadComplete] = useState(false);
     const [dragActive, setDragActive] = useState(false);
 
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
     const maxSize = maxSizeMB * 1024 * 1024;
 
     const validateFile = (file: File): { valid: boolean; error?: string } => {
@@ -67,49 +74,94 @@ export default function FileUpload({ onUploadComplete, maxSizeMB = 10 }: FileUpl
         }
     };
 
+    /**
+     * STEP 2 Implementation: Direct Frontend Upload to Supabase
+     */
     const uploadFile = async () => {
-        if (!file) return;
+        if (!file || !session?.user) {
+            toast.error('Please sign in to upload files');
+            return;
+        }
 
         setUploading(true);
         setUploadProgress(0);
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // Simulate progress (real progress tracking would need server-sent events or websockets)
-            const progressInterval = setInterval(() => {
-                setUploadProgress((prev) => Math.min(prev + 10, 90));
-            }, 200);
-
-            const response = await fetch('/api/upload', {
+            // 1. Get a Signed Upload URL from our backend
+            // This token allows us to bypass RLS for this specific file path.
+            console.log('[FileUpload] Requesting signed upload URL...');
+            const signResponse = await fetch('/api/upload/sign', {
                 method: 'POST',
-                body: formData,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type
+                })
             });
 
-            clearInterval(progressInterval);
-            setUploadProgress(100);
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Upload failed');
+            if (!signResponse.ok) {
+                const errorData = await signResponse.json();
+                throw new Error(errorData.error || 'Failed to generate upload permission');
             }
 
-            const data = await response.json();
+            const { token, path, storagePath: finalPath } = await signResponse.json();
+            console.log('[FileUpload] Permission granted. Path:', finalPath);
 
-            if (data.success) {
-                setUploadComplete(true);
-                toast.success('Resume uploaded successfully!');
+            // 2. Upload directly to Supabase using the Token
+            // This bypasses the need for global "Public Write" policies.
+            setUploadProgress(30);
 
-                if (onUploadComplete) {
-                    onUploadComplete(data.fileId, data.url || '', file.name);
-                }
-            } else {
-                throw new Error(data.error || 'Upload failed');
+            const { data, error } = await supabaseClient.storage
+                .from(STORAGE_BUCKET)
+                .uploadToSignedUrl(path, token, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (error) {
+                console.error('[FileUpload] Supabase upload error:', error);
+                throw new Error('Storage error: ' + error.message);
             }
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to upload file');
+
+            setUploadProgress(70);
+
+            // 3. Backend Handoff (Step 3)
+            // We tell our database that the file exists in Supabase.
+            // We only send the path and metadata - NEVER the raw file.
+            console.log('[FileUpload] Starting backend handoff...');
+
+            const handoffResponse = await fetch('/api/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    storagePath: data.path,
+                    fileName: file.name,
+                    size: file.size,
+                    mimeType: file.type,
+                }),
+            });
+
+            if (!handoffResponse.ok) {
+                const errorData = await handoffResponse.json();
+                throw new Error(errorData.error || 'Failed to sync with backend');
+            }
+
+            const handoffData = await handoffResponse.json();
+            console.log('[FileUpload] Backend handoff success:', handoffData);
+
+            // 4. Finalize
+            setUploadComplete(true);
+            toast.success('Resume processed successfully!');
+
+            if (onUploadComplete) {
+                // Return the fileId (MongoDB ID) and the storage path
+                onUploadComplete(handoffData.fileId, handoffData.storagePath || data.path, file.name);
+            }
+        } catch (error: any) {
+            console.error('[FileUpload] Upload sequence failed:', error);
+            toast.error(error.message || 'Failed to process resume');
             setUploadProgress(0);
         } finally {
             setUploading(false);
@@ -127,8 +179,8 @@ export default function FileUpload({ onUploadComplete, maxSizeMB = 10 }: FileUpl
             {!file ? (
                 <div
                     className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 hover:border-gray-400'
                         }`}
                     onDragEnter={handleDrag}
                     onDragOver={handleDrag}
