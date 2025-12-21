@@ -140,6 +140,47 @@ export async function uploadResume(
 }
 
 /**
+ * Generate a signed upload URL for a specific path
+ * This allows a client to upload a file directly to a specific path
+ * without needing RLS write permissions.
+ * 
+ * @param path - The storage path where the file will be uploaded
+ * @returns Object with token, path, and full URL
+ */
+export async function createSignedUploadUrl(
+    path: string
+): Promise<{ token: string; path: string; url: string; error?: string }> {
+    if (!supabaseServiceClient) {
+        return { token: '', path: '', url: '', error: 'Supabase service client not configured' };
+    }
+
+    try {
+        const { data, error } = await supabaseServiceClient.storage
+            .from(STORAGE_BUCKET)
+            .createSignedUploadUrl(path);
+
+        if (error) {
+            console.error('Error creating signed upload URL:', error);
+            return { token: '', path: '', url: '', error: error.message };
+        }
+
+        return {
+            token: data.token,
+            path: data.path,
+            url: data.signedUrl
+        };
+    } catch (error) {
+        console.error('Unexpected error creating signed upload URL:', error);
+        return {
+            token: '',
+            path: '',
+            url: '',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+}
+
+/**
  * Generate a signed URL for a private file
  * Useful if the bucket is private and you need temporary access
  * 
@@ -200,6 +241,28 @@ export async function downloadResume(
         return data;
     } catch (error) {
         console.error('Download error:', error);
+        return null;
+    }
+}
+
+/**
+ * Fetch a resume file and return it as a Buffer (Step 5)
+ * Useful for server-side processing like AI or PDF parsing
+ * 
+ * @param path - Storage path of the file
+ * @returns Buffer or null if error
+ */
+export async function getResumeBuffer(
+    path: string
+): Promise<Buffer | null> {
+    const blob = await downloadResume(path);
+    if (!blob) return null;
+
+    try {
+        const arrayBuffer = await blob.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+    } catch (error) {
+        console.error('Error converting blob to buffer:', error);
         return null;
     }
 }

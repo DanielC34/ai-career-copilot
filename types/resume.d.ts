@@ -137,6 +137,7 @@ export interface ResumeMeta {
     atsScore?: number; // 0-100, ATS compatibility score
     lastEditedAt?: Date;
     selectedTemplate?: ATSTemplateId;
+    status: 'processing' | 'completed' | 'failed';
 }
 
 /**

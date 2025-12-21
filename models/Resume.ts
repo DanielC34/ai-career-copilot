@@ -69,6 +69,11 @@ const ResumeSchema = new Schema<ResumeMeta>({
         enum: ['modern-clean', 'professional-classic', 'executive', 'technical', 'simple-ats'],
         default: 'modern-clean', // Default ATS template
     },
+    status: {
+        type: String,
+        enum: ['processing', 'completed', 'failed'],
+        default: 'processing',
+    },
 });
 
 // Create compound index for efficient querying
