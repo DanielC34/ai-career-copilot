@@ -41,10 +41,6 @@ const ResumeSchema = new Schema<ResumeMeta>({
         type: Date,
         default: Date.now,
     },
-    extractedText: {
-        type: String,
-        default: null, // Backward compatibility - raw text extraction
-    },
     processed: {
         type: Boolean,
         default: false, // Flag to track if AI extraction has been done
@@ -59,6 +55,14 @@ const ResumeSchema = new Schema<ResumeMeta>({
         min: 0,
         max: 100,
         default: null, // ATS compatibility score (0-100)
+    },
+    analysis: {
+        type: Schema.Types.Mixed,
+        default: null,
+    },
+    rawText: {
+        type: String,
+        default: null,
     },
     lastEditedAt: {
         type: Date,
