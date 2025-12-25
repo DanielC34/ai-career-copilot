@@ -31,7 +31,7 @@ export default function ResumeSelector({ onSelect }: ResumeSelectorProps) {
 
     const fetchResumes = async () => {
         try {
-            const response = await fetch('/api/upload');
+            const response = await fetch('/api/resumes');
             if (!response.ok) throw new Error('Failed to fetch resumes');
 
             const data = await response.json();
@@ -81,8 +81,8 @@ export default function ResumeSelector({ onSelect }: ResumeSelectorProps) {
                     <div
                         key={resume._id}
                         className={`relative border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${selectedId === resume._id
-                                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                                : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-gray-200 hover:border-gray-300'
                             }`}
                         onClick={() => handleSelect(resume)}
                     >

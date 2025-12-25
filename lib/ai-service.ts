@@ -99,17 +99,29 @@ Guidelines:
  * Structures raw resume text into JSON using Gemini.
  * 
  * @param rawText - Plain text extracted from a resume document.
+ * @param template - Optional ATS template to guide mapping.
  * @returns Promise<ResumeStructuredData> - Structured resume data.
  */
-export async function structureResumeData(rawText: string): Promise<ResumeStructuredData> {
-    console.log('[AI Service] Structuring resume data...');
+export async function structureResumeData(
+    rawText: string,
+    templateId?: string
+): Promise<ResumeStructuredData> {
+    console.log('[AI Service] Structuring resume data...', { templateId });
 
     if (!rawText || rawText.trim().length < 50) {
         throw new Error('Raw text is too short or empty to be a valid resume.');
     }
 
     try {
-        const fullPrompt = `${RESUME_PARSER_PROMPT}\n\nRAW RESUME TEXT:\n${rawText}`;
+        let templateGuidance = '';
+        if (templateId) {
+            templateGuidance = `
+IMPORTANT: Standardize the output according to the following template style characteristics: ${templateId}.
+Map the raw text into the fields precisely as defined in the schema.
+`;
+        }
+
+        const fullPrompt = `${RESUME_PARSER_PROMPT}\n${templateGuidance}\nRAW RESUME TEXT:\n${rawText}`;
 
         const result = await model.generateContent(fullPrompt);
         const response = await result.response;
@@ -120,6 +132,15 @@ export async function structureResumeData(rawText: string): Promise<ResumeStruct
 
         try {
             const structuredData = JSON.parse(cleanedText) as ResumeStructuredData;
+
+            // Basic validation: ensure critical sections exist as arrays if missing
+            if (!structuredData.experience) structuredData.experience = [];
+            if (!structuredData.education) structuredData.education = [];
+            if (!structuredData.skills) structuredData.skills = [];
+            if (!structuredData.contact) {
+                structuredData.contact = { fullName: 'Unknown', email: 'Unknown' };
+            }
+
             return structuredData;
         } catch (parseError) {
             console.error('[AI Service] JSON Parse Error:', parseError);
