@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, Loader2, FileText, Upload as UploadIcon } from "lucide-react";
+import { Sparkles, Loader2, FileText, Upload as UploadIcon, Brain } from "lucide-react";
 import { toast } from "react-hot-toast";
-import FileUpload from "@/components/FileUpload";
+import ResumeUpload from "@/components/ResumeUpload";
 import ResumeSelector from "@/components/ResumeSelector";
+import { RESUME_TEMPLATES, TemplateId } from "@/lib/templates";
 
 export default function ApplicationGenerator() {
     const router = useRouter();
@@ -20,6 +21,7 @@ export default function ApplicationGenerator() {
     const [activeTab, setActiveTab] = useState("upload");
     const [uploadMode, setUploadMode] = useState<"new" | "existing">("new");
     const [isFetchingResume, setIsFetchingResume] = useState(false);
+    const [isProcessingManual, setIsProcessingManual] = useState(false);
 
     const handleGenerate = async () => {
         if (!cvText || !jobDescription) {
@@ -85,19 +87,111 @@ export default function ApplicationGenerator() {
         }
     };
 
-    const handleUploadComplete = async (fileId: string, url: string, fileName: string) => {
-        toast.success(`${fileName} uploaded! Processing text...`);
-        // We set isFetchingResume to true to keep the button disabled while AI parses
+    /**
+     * Resume Intelligence Polling (Shared for all paths)
+     */
+    const pollResumeStatus = async (id: string) => {
+        setIsFetchingResume(true);
+        const maxAttempts = 30;
+        let attempts = 0;
+
+        const interval = setInterval(async () => {
+            attempts++;
+            try {
+                const response = await fetch(`/api/resumes/${id}`);
+                const data = await response.json();
+
+                if (data.resume?.status === 'completed') {
+                    clearInterval(interval);
+                    setCvText(data.resume.rawText || "");
+                    setIsFetchingResume(false);
+                    setIsProcessingManual(false);
+                    toast.success('Resume processed successfully!');
+                } else if (data.resume?.status === 'failed') {
+                    clearInterval(interval);
+                    setIsFetchingResume(false);
+                    setIsProcessingManual(false);
+                    toast.error('AI processing failed. Please try another method.');
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                setIsFetchingResume(false);
+                setIsProcessingManual(false);
+                toast.error('Processing taking too long. Check your dashboard later.');
+            }
+        }, 2000);
+    };
+
+    /**
+     * Manual / Template Submission Flow
+     * 1. Create Resume Record
+     * 2. Trigger Intelligence Pipeline
+     * 3. Poll for results
+     */
+    const handleManualSubmit = async (source: 'manual' | 'template', content: string) => {
+        if (!content || content.length < 50) {
+            toast.error('Please provide more detailed resume content');
+            return;
+        }
+
+        setIsProcessingManual(true);
+        setIsFetchingResume(true);
+
+        try {
+            // 1. Create Resume
+            const createRes = await fetch('/api/resumes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    source,
+                    rawText: content,
+                    fileName: `${source === 'template' ? 'Template' : 'Manual'}_Resume_${new Date().toLocaleDateString()}.docx`,
+                })
+            });
+
+            const createData = await createRes.json();
+            if (!createRes.ok) throw new Error(createData.error || 'Failed to initialize resume');
+
+            const resumeId = createData.resumeId;
+
+            // 2. Trigger Process
+            const processRes = await fetch(`/api/resumes/${resumeId}/process`, { method: 'POST' });
+            if (!processRes.ok) throw new Error('Failed to start intelligence pipeline');
+
+            // 3. Poll
+            pollResumeStatus(resumeId);
+
+        } catch (error: any) {
+            toast.error(error.message);
+            setIsProcessingManual(false);
+            setIsFetchingResume(false);
+        }
+    };
+
+    const handleResumeCreated = async (resumeId: string, url: string, fileName: string) => {
+        toast.success(`${fileName} uploaded! Starting AI analysis...`);
         setIsFetchingResume(true);
     };
 
-    const handleProcessComplete = async (fileId: string) => {
-        await fetchResumeText(fileId);
+    const handleProcessComplete = async (resumeId: string) => {
+        // Text is automatically fetched by pollResumeStatus inside ResumeUpload
+        // But for consistency we can call it here if needed
+        await fetchResumeText(resumeId);
     };
 
     const handleResumeSelect = async (resume: any) => {
         toast.success('Resume selected!');
         await fetchResumeText(resume._id);
+    };
+
+    const handleTemplateSelect = (id: TemplateId) => {
+        const template = RESUME_TEMPLATES[id];
+        setCvText(template.content);
+        toast.success(`${template.name} template loaded!`);
     };
 
     return (
@@ -124,24 +218,54 @@ export default function ApplicationGenerator() {
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-4">
-                            {/* <TabsTrigger value="paste" className="flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                Paste Text
-                            </TabsTrigger> */}
                             <TabsTrigger value="upload" className="flex items-center gap-2">
                                 <UploadIcon className="h-4 w-4" />
-                                Upload File
+                                File Upload
+                            </TabsTrigger>
+                            <TabsTrigger value="paste" className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Paste / Templates
                             </TabsTrigger>
                         </TabsList>
 
-                        {/* <TabsContent value="paste" className="mt-0">
-                            <Textarea
-                                placeholder="Paste the full text of your CV or resume here..."
-                                value={cvText}
-                                onChange={(e) => setCvText(e.target.value)}
-                                className="min-h-[300px] sm:min-h-[350px] lg:min-h-[400px] resize-none bg-white border-gray-300 rounded-lg text-sm sm:text-base"
-                            />
-                        </TabsContent> */}
+                        <TabsContent value="paste" className="mt-0">
+                            <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col gap-4">
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="text-sm font-medium text-gray-500 mr-2 flex items-center">Try a template:</span>
+                                    {(Object.keys(RESUME_TEMPLATES) as TemplateId[]).map((id) => (
+                                        <Button
+                                            key={id}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleTemplateSelect(id)}
+                                            className="text-xs"
+                                        >
+                                            {RESUME_TEMPLATES[id].name}
+                                        </Button>
+                                    ))}
+                                </div>
+                                <Textarea
+                                    placeholder="Paste the full text of your CV or resume here..."
+                                    value={cvText}
+                                    onChange={(e) => setCvText(e.target.value)}
+                                    className="min-h-[300px] sm:min-h-[350px] lg:min-h-[400px] resize-none bg-white border-gray-300 rounded-lg text-sm sm:text-base"
+                                />
+                                <Button
+                                    onClick={() => handleManualSubmit(cvText === RESUME_TEMPLATES.modern.content ? 'template' : 'manual', cvText)}
+                                    disabled={!cvText || isProcessingManual}
+                                    className="w-full bg-black text-white hover:bg-gray-800"
+                                >
+                                    {isProcessingManual ? (
+                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing AI Analysis...</>
+                                    ) : (
+                                        <><Brain className="w-4 h-4 mr-2" /> Start AI Analysis</>
+                                    )}
+                                </Button>
+                                <p className="text-xs text-gray-500 italic">
+                                    * Manual text must be analyzed by the AI pipeline before generating an application.
+                                </p>
+                            </div>
+                        </TabsContent>
 
                         <TabsContent value="upload" className="mt-0">
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -152,8 +276,8 @@ export default function ApplicationGenerator() {
                                     </TabsList>
 
                                     <TabsContent value="new">
-                                        <FileUpload
-                                            onUploadComplete={handleUploadComplete}
+                                        <ResumeUpload
+                                            onResumeCreated={handleResumeCreated}
                                             onProcessComplete={handleProcessComplete}
                                         />
                                     </TabsContent>

@@ -6,6 +6,9 @@ import { Types } from 'mongoose';
 
 export type AllowedMime = 'application/pdf' | 'application/msword' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
+export type ResumeSource = 'upload' | 'manual' | 'template';
+export type ResumeStatus = 'processing' | 'completed' | 'failed';
+
 /**
  * Contact Information
  */
@@ -124,10 +127,11 @@ export interface ResumeMeta {
     _id?: string;
     userId: Types.ObjectId | string;
     fileName: string;
-    storagePath: string;
+    source: ResumeSource;
+    storagePath?: string; // Required only for source: upload
     publicUrl?: string;
     size: number;
-    mimeType: AllowedMime;
+    mimeType?: AllowedMime; // Required only for source: upload
     uploadedAt: Date;
     processed: boolean;
 
@@ -138,7 +142,7 @@ export interface ResumeMeta {
     rawText?: string; // Extracted raw text for generation
     lastEditedAt?: Date;
     selectedTemplate?: ATSTemplateId;
-    status: 'processing' | 'completed' | 'failed';
+    status: ResumeStatus;
 }
 
 /**
@@ -146,7 +150,7 @@ export interface ResumeMeta {
  */
 export interface UploadResponse {
     success: boolean;
-    fileId?: string;
+    resumeId?: string;
     url?: string;
     error?: string;
 }

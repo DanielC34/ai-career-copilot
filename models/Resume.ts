@@ -15,14 +15,20 @@ const ResumeSchema = new Schema<ResumeMeta>({
         required: true,
         index: true, // Index for faster lookups by user
     },
+    source: {
+        type: String,
+        required: true,
+        enum: ['upload', 'manual', 'template'],
+    },
     fileName: {
         type: String,
         required: true,
     },
     storagePath: {
         type: String,
-        required: true,
-        unique: true, // Each storage path should be unique
+        required: false, // Only required for source: upload
+        sparse: true, // Allow multiple nulls despite unique index if needed (though we handle uniqueness manually)
+        unique: true,
     },
     publicUrl: {
         type: String,
@@ -34,7 +40,7 @@ const ResumeSchema = new Schema<ResumeMeta>({
     },
     mimeType: {
         type: String,
-        required: true,
+        required: false, // Only required for source: upload
         enum: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] as AllowedMime[],
     },
     uploadedAt: {
