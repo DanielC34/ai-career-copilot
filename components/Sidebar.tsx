@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { useSession, signOut } from "next-auth/react"
 import {
     LayoutDashboard,
@@ -127,6 +127,7 @@ export function Sidebar({ className }: SidebarProps) {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="p-0 bg-gray-900 border-r-gray-800 w-72 text-white">
+                        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                         <SidebarContent />
                     </SheetContent>
                 </Sheet>

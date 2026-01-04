@@ -1,0 +1,372 @@
+/**
+ * Resume Print Stylesheet
+ * 
+ * Purpose: Optimizes resume HTML for PDF generation via browser print.
+ * 
+ * Usage:
+ * - Import this file in your resume preview component
+ * - Or add to globals.css
+ * - Apply class "resume-print" to the root resume container
+ * 
+ * Compatible with: A4 and US Letter paper sizes
+ * ATS Safety: 100% - no hidden text, no overlays, clean text flow
+ */
+
+/* ============================================
+   SECTION 1: PAGE SETUP
+   ============================================ */
+
+@media print {
+    /* 
+     * Set page size and margins for consistent PDF output.
+     * Using @page for universal A4/Letter compatibility.
+     */
+    @page {
+        size: auto; /* Let browser choose (A4 or Letter) */
+        margin: 0.75in 0.75in 0.75in 0.75in; /* Consistent margins all sides */
+    }
+
+    /* 
+     * Ensure the body fills the page and has no extra padding.
+     */
+    html, body {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        background: white !important;
+        color: black !important;
+        font-size: 11pt; /* Optimal print size */
+        line-height: 1.4;
+    }
+
+    /* 
+     * Hide all non-resume elements (navigation, buttons, etc.)
+     */
+    header, footer, nav, aside,
+    .sidebar, .no-print, button,
+    .btn, [role="navigation"] {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   SECTION 2: TYPOGRAPHY FOR PDF
+   ============================================ */
+
+@media print {
+    /* 
+     * System fonts only - ensure embedding works in all PDF viewers.
+     * Arial/Helvetica are universally supported by ATS systems.
+     */
+    .resume-print {
+        font-family: Arial, Helvetica, sans-serif !important;
+    }
+
+    /* 
+     * Headings: Maintain hierarchy, prevent orphaning.
+     */
+    .resume-print h1 {
+        font-size: 18pt;
+        font-weight: bold;
+        margin-bottom: 4pt;
+        page-break-after: avoid; /* Never break after the name */
+    }
+
+    .resume-print h2 {
+        font-size: 13pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5pt;
+        margin-top: 12pt;
+        margin-bottom: 6pt;
+        border-bottom: 0.5pt solid #333;
+        padding-bottom: 2pt;
+        page-break-after: avoid; /* Section heading must stay with content */
+    }
+
+    .resume-print h3 {
+        font-size: 11pt;
+        font-weight: bold;
+        margin-top: 8pt;
+        margin-bottom: 2pt;
+        page-break-after: avoid; /* Job title must stay with company */
+    }
+
+    /* 
+     * Body text: Readable size, proper spacing.
+     */
+    .resume-print p,
+    .resume-print li {
+        font-size: 10pt;
+        line-height: 1.35;
+        margin-bottom: 3pt;
+        orphans: 3; /* Minimum lines at bottom of page */
+        widows: 3;  /* Minimum lines at top of page */
+    }
+
+    /* 
+     * Links: Remove underlines, use black text for ATS.
+     */
+    .resume-print a {
+        color: black !important;
+        text-decoration: none !important;
+    }
+}
+
+/* ============================================
+   SECTION 3: PAGE BREAK CONTROL
+   ============================================ */
+
+@media print {
+    /* 
+     * Resume sections: Never split awkwardly.
+     */
+    .resume-section {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Experience items: Keep job entries together.
+     * Each job should not split across pages if possible.
+     */
+    .experience-item,
+    .job-entry,
+    .work-experience-entry {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Education items: Keep degree + institution together.
+     */
+    .education-item,
+    .education-entry {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Skills section: Avoid splitting skill categories.
+     */
+    .skills-category,
+    .skill-group {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Projects: Keep project title + description together.
+     */
+    .project-item,
+    .project-entry {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Certifications: Keep cert + issuer together.
+     */
+    .certification-item {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Bullet lists: Avoid splitting mid-list.
+     */
+    .resume-print ul {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .resume-print li {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* 
+     * Force page break: Use sparingly for very long resumes.
+     */
+    .page-break-before {
+        page-break-before: always;
+        break-before: page;
+    }
+
+    .page-break-after {
+        page-break-after: always;
+        break-after: page;
+    }
+}
+
+/* ============================================
+   SECTION 4: SPACING & LAYOUT
+   ============================================ */
+
+@media print {
+    /* 
+     * Contact header: Compact, single block.
+     */
+    .contact-header,
+    .resume-header {
+        margin-bottom: 12pt;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .contact-info {
+        font-size: 9pt;
+        color: #333 !important;
+    }
+
+    /* 
+     * Separator lines: Simple, ATS-safe.
+     */
+    .section-divider,
+    .resume-divider {
+        border: none;
+        border-top: 0.5pt solid #888;
+        margin: 8pt 0;
+    }
+
+    /* 
+     * Dates: Right-aligned, gray (but still visible).
+     */
+    .date-range,
+    .entry-date {
+        font-size: 9pt;
+        color: #555 !important;
+        float: right;
+    }
+
+    /* 
+     * Summary section: Slightly indented for emphasis.
+     */
+    .professional-summary,
+    .resume-summary {
+        font-style: italic;
+        padding-left: 4pt;
+        border-left: 1.5pt solid #aaa;
+        margin-bottom: 12pt;
+    }
+
+    /* 
+     * Skills list: Inline format for space efficiency.
+     */
+    .skills-list {
+        display: block;
+        margin-bottom: 6pt;
+    }
+
+    .skill-tag {
+        display: inline;
+        margin-right: 4pt;
+    }
+
+    .skill-tag::after {
+        content: ",";
+    }
+
+    .skill-tag:last-child::after {
+        content: "";
+    }
+}
+
+/* ============================================
+   SECTION 5: ATS SAFETY RULES
+   ============================================ */
+
+@media print {
+    /* 
+     * No hidden text - everything visible.
+     */
+    .resume-print * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* 
+     * No absolute positioning - clean document flow.
+     */
+    .resume-print,
+    .resume-print * {
+        position: static !important;
+        float: none !important; /* Exception: date floats are handled above */
+    }
+
+    /* Restore date floats specifically */
+    .resume-print .date-range,
+    .resume-print .entry-date {
+        float: right !important;
+    }
+
+    /* 
+     * No decorative backgrounds - pure content.
+     */
+    .resume-print {
+        background: white !important;
+        background-image: none !important;
+    }
+
+    /* 
+     * No box shadows - clean edges.
+     */
+    .resume-print,
+    .resume-print * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    /* 
+     * Standard bullets only.
+     */
+    .resume-print ul {
+        list-style-type: disc;
+        padding-left: 16pt;
+        margin-left: 0;
+    }
+
+    /* 
+     * No custom icons - text only.
+     */
+    .resume-print svg,
+    .resume-print img,
+    .resume-print [class*="icon"] {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   SECTION 6: RESPONSIVE PAGE FITTING
+   ============================================ */
+
+@media print {
+    /* 
+     * Ensure content doesn't overflow page width.
+     */
+    .resume-print {
+        max-width: 100%;
+        overflow: hidden;
+        word-wrap: break-word;
+        hyphens: auto;
+    }
+
+    /* 
+     * Tables (if present) - linearize for ATS.
+     */
+    .resume-print table {
+        display: block;
+        width: 100%;
+    }
+
+    .resume-print tr {
+        display: block;
+    }
+
+    .resume-print td,
+    .resume-print th {
+        display: block;
+        text-align: left;
+    }
+}

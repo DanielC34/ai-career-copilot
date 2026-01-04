@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./resume-print.css";
 
 @theme {
   --color-background: var(--background);
@@ -87,6 +88,7 @@
   * {
     border-color: var(--border);
   }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
