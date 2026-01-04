@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
         const resumes = await Resume.find({ userId: session.user.id })
             .sort({ uploadedAt: -1 })
-            .select('fileName size mimeType uploadedAt publicUrl processed source status');
+            .select('_id fileName size mimeType uploadedAt publicUrl processed source status');
 
         return NextResponse.json({ resumes });
     } catch (error) {

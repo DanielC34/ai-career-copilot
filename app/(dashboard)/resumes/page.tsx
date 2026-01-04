@@ -29,7 +29,7 @@ export default function ResumesPage() {
 
     const fetchResumes = async () => {
         try {
-            const response = await fetch('/api/upload');
+            const response = await fetch('/api/resumes');
             if (!response.ok) throw new Error('Failed to fetch resumes');
 
             const data = await response.json();
@@ -45,10 +45,21 @@ export default function ResumesPage() {
         if (!confirm(`Are you sure you want to delete "${fileName}"?`)) return;
 
         try {
-            // TODO: Implement delete endpoint in API
-            toast('Delete functionality coming soon', { icon: 'ℹ️' });
+            const response = await fetch(`/api/resumes/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete resume');
+            }
+
+            toast.success('Resume deleted successfully');
+            // Refresh the list
+            setResumes(prev => prev.filter(r => r._id !== id));
         } catch (error) {
-            toast.error('Failed to delete resume');
+            console.error('Delete error:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to delete resume');
         }
     };
 
@@ -66,13 +77,13 @@ export default function ResumesPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Resume Library</h1>
-                    <p className="text-gray-600">Manage your uploaded resumes</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Resume Library</h1>
+                    <p className="text-sm sm:text-base text-gray-600">Manage your uploaded resumes</p>
                 </div>
                 <Link href="/applications/new">
-                    <Button>
+                    <Button size="sm" className="sm:size-default">
                         <Plus className="w-4 h-4 mr-2" />
                         New Application
                     </Button>
@@ -110,22 +121,22 @@ export default function ResumesPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {resumes.map((resume) => (
                         <div
                             key={resume._id}
-                            className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200"
+                            className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200"
                         >
-                            <div className="flex items-start gap-4 mb-4">
-                                <div className="p-3 bg-blue-50 rounded-lg">
+                            <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                <div className="p-2 sm:p-3 bg-blue-50 rounded-lg flex-shrink-0">
                                     {getFileIcon(resume.mimeType)}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-gray-900 truncate mb-1">
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base break-words line-clamp-2 mb-1" title={resume.fileName}>
                                         {resume.fileName}
                                     </h3>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                        <span className="px-2 py-1 bg-gray-100 rounded">
+                                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs text-gray-500">
+                                        <span className="px-2 py-0.5 sm:py-1 bg-gray-100 rounded">
                                             {getFileTypeLabel(resume.mimeType)}
                                         </span>
                                         <span>{(resume.size / 1024 / 1024).toFixed(2)} MB</span>
@@ -133,7 +144,7 @@ export default function ResumesPage() {
                                 </div>
                             </div>
 
-                            <div className="text-xs text-gray-400 mb-4">
+                            <div className="text-xs text-gray-400 mb-3 sm:mb-4">
                                 Uploaded {formatDistanceToNow(new Date(resume.uploadedAt), { addSuffix: true })}
                             </div>
 
@@ -142,10 +153,10 @@ export default function ResumesPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="flex-1"
+                                        className="flex-1 text-xs sm:text-sm"
                                         onClick={() => window.open(resume.publicUrl, '_blank')}
                                     >
-                                        <Download className="w-4 h-4 mr-1" />
+                                        <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                         View
                                     </Button>
                                 )}
@@ -153,7 +164,7 @@ export default function ResumesPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleDelete(resume._id, resume.fileName)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
