@@ -1,6 +1,25 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 
-const ApplicationSchema = new Schema({
+export interface ApplicationDocument extends Document {
+    userId: mongoose.Types.ObjectId;
+    jobTitle: string;
+    companyName: string;
+    originalCV: string;
+    jobDescription: string;
+    status: 'draft' | 'generated' | 'failed';
+    generatedContent?: {
+        rewrittenCV?: string;
+        coverLetter?: string;
+        skillsMatch?: string[];
+        skillsGap?: string[];
+        interviewQuestions?: string[];
+        summary?: string;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const ApplicationSchema = new Schema<ApplicationDocument>({
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -50,6 +69,7 @@ ApplicationSchema.pre('save', function () {
     this.updatedAt = new Date();
 });
 
-const Application = models.Application || model('Application', ApplicationSchema);
+export const Application: Model<ApplicationDocument> =
+    mongoose.models.Application || mongoose.model<ApplicationDocument>('Application', ApplicationSchema);
 
 export default Application;

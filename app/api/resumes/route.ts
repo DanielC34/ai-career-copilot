@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Resume from '@/models/Resume';
+import Resume, { ResumeDocument } from '@/models/Resume';
 import type { ResumeSource, AllowedMime } from '@/types/resume';
 
 export async function POST(request: NextRequest) {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
             processed: false,
         });
 
-        console.log(`[Resume API] Created ${source} resume: ${resume._id}`);
+        console.log(`[Resume API]Created ${source} resume: ${resume._id}`);
 
         // 4. Return Canonical Response
         return NextResponse.json({
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
 
         await connectToDatabase();
 
-        const resumes = await Resume.find({ userId: session.user.id })
+        const resumes = await Resume.find<ResumeDocument>({ userId: session.user.id })
             .sort({ uploadedAt: -1 })
             .select('_id fileName size mimeType uploadedAt publicUrl processed source status');
 

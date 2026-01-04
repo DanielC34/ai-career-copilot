@@ -1,14 +1,13 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import connectToDatabase from '@/lib/db';
-import User from '@/models/User';
+import User, { UserDocument } from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 async function getUser(email: string) {
     await connectToDatabase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = await User.findOne({ email }).select('+password') as any;
+    const user = await User.findOne<UserDocument>({ email }).select('+password');
     return user;
 }
 
@@ -45,9 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             console.log('Session callback:', { tokenSub: token.sub, sessionUser: !!session.user });
             if (token.sub && session.user) {
                 // Add user ID and name to session
-                // @ts-expect-error - Adding id to session user
                 session.user.id = token.sub;
-                // @ts-expect-error - Adding name from token
                 if (token.name) session.user.name = token.name;
             }
             return session;

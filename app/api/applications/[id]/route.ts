@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Application from '@/models/Application';
+import Application, { ApplicationDocument } from '@/models/Application';
 
 export async function GET(
     request: Request,
@@ -16,9 +16,8 @@ export async function GET(
         const { id } = await params;
         await connectToDatabase();
 
-        const application = await Application.findOne({
+        const application = await Application.findOne<ApplicationDocument>({
             _id: id,
-            // @ts-expect-error - session.user.id is added in auth.ts
             userId: session.user.id,
         });
 
@@ -51,7 +50,6 @@ export async function DELETE(
 
         const result = await Application.deleteOne({
             _id: id,
-            // @ts-expect-error - session.user.id is added in auth.ts
             userId: session.user.id,
         });
 

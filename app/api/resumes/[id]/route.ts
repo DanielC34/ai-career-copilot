@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Resume from '@/models/Resume';
+import Resume, { ResumeDocument } from '@/models/Resume';
 import { deleteResume as deleteFromStorage } from '@/lib/storage';
 
 export async function GET(
@@ -28,7 +28,7 @@ export async function GET(
 
         await connectToDatabase();
 
-        const resume = await Resume.findOne({ _id: id, userId });
+        const resume = await Resume.findOne<ResumeDocument>({ _id: id, userId });
 
         if (!resume) {
             return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
@@ -75,7 +75,7 @@ export async function DELETE(
         await connectToDatabase();
 
         // Find resume first to get storage path
-        const resume = await Resume.findOne({ _id: id, userId });
+        const resume = await Resume.findOne<ResumeDocument>({ _id: id, userId });
 
         if (!resume) {
             return NextResponse.json({ error: 'Resume not found' }, { status: 404 });

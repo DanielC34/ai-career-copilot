@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { performance } from 'perf_hooks';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Resume from '@/models/Resume';
+import Resume, { ResumeDocument } from '@/models/Resume';
 import { getResumeBuffer } from '@/lib/storage';
 import { extractRawText } from '@/lib/parser';
 import { structureResumeData } from '@/lib/ai-service';
@@ -83,8 +83,7 @@ export async function POST(
         // 3. Metadata Fetch
         stageName = 'Metadata Fetch';
         const metaStart = performance.now();
-        log('Fetching resume metadata...', undefined, { id, userId });
-        const resume = await Resume.findOne({ _id: id, userId });
+        const resume = await Resume.findOne<ResumeDocument>({ _id: id, userId });
         if (!resume) {
             return NextResponse.json({
                 success: false,

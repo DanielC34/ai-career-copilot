@@ -1,14 +1,11 @@
-/**
- * Resume Model - Stores metadata for uploaded resume files
- * 
- * This model tracks resume files stored in Supabase Storage.
- * Actual file content is in Supabase, this stores references and metadata.
- */
-
-import mongoose, { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import type { ResumeMeta, AllowedMime } from '@/types/resume';
 
-const ResumeSchema = new Schema<ResumeMeta>({
+export interface ResumeDocument extends Omit<ResumeMeta, '_id'>, Document {
+    _id: mongoose.Types.ObjectId;
+}
+
+const ResumeSchema = new Schema<ResumeDocument>({
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -89,6 +86,7 @@ const ResumeSchema = new Schema<ResumeMeta>({
 // Create compound index for efficient querying
 ResumeSchema.index({ userId: 1, uploadedAt: -1 });
 
-const Resume = models.Resume || model<ResumeMeta>('Resume', ResumeSchema);
+export const Resume: Model<ResumeDocument> =
+    mongoose.models.Resume || mongoose.model<ResumeDocument>('Resume', ResumeSchema);
 
 export default Resume;

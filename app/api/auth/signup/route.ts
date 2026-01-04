@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import connectToDatabase from '@/lib/db';
-import User from '@/models/User';
+import User, { UserDocument } from '@/models/User';
 import { z } from 'zod';
 
 const signupSchema = z.object({
@@ -17,8 +17,7 @@ export async function POST(request: Request) {
 
         await connectToDatabase();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existingUser = await User.findOne({ email }) as any;
+        const existingUser = await User.findOne<UserDocument>({ email });
         if (existingUser) {
             return NextResponse.json(
                 { error: 'User already exists' },
@@ -41,7 +40,7 @@ export async function POST(request: Request) {
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { error: error.errors[0].message },
+                { error: error.issues[0].message },
                 { status: 400 }
             );
         }
