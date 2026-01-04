@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Resume from '@/models/Resume';
+import Resume, { ResumeDocument } from '@/models/Resume';
 
 export async function GET(
     request: NextRequest,
@@ -23,9 +23,8 @@ export async function GET(
         const { id } = await params;
         await connectToDatabase();
 
-        const resume = await Resume.findOne({
+        const resume = await Resume.findOne<ResumeDocument>({
             _id: id,
-            // @ts-expect-error - session.user.id is added in auth.ts
             userId: session.user.id,
         });
 
@@ -64,9 +63,8 @@ export async function PUT(
 
         await connectToDatabase();
 
-        const resume = await Resume.findOne({
+        const resume = await Resume.findOne<ResumeDocument>({
             _id: id,
-            // @ts-expect-error - session.user.id is added in auth.ts
             userId: session.user.id,
         });
 

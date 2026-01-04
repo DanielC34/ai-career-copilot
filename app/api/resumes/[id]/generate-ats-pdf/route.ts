@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Resume from '@/models/Resume';
+import Resume, { ResumeDocument } from '@/models/Resume';
 import { generateATSResumePDF } from '@/lib/ats-pdf-generator';
 import type { ATSTemplateId } from '@/types/resume';
 
@@ -27,9 +27,8 @@ export async function POST(
 
         await connectToDatabase();
 
-        const resume = await Resume.findOne({
+        const resume = await Resume.findOne<ResumeDocument>({
             _id: id,
-            // @ts-expect-error - session.user.id is added in auth.ts
             userId: session.user.id,
         });
 
@@ -48,11 +47,11 @@ export async function POST(
         const pdfBytes = await generateATSResumePDF(resume.structuredData, templateId);
 
         // Create response with PDF
-        return new NextResponse(pdfBytes, {
+        return new NextResponse(pdfBytes as any, {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="Resume_${resume.contact?.fullName || 'ATS'}.pdf"`,
+                'Content-Disposition': `attachment; filename="Resume_${resume.structuredData.contact?.fullName || 'ATS'}.pdf"`,
                 'Content-Length': pdfBytes.length.toString(),
             },
         });

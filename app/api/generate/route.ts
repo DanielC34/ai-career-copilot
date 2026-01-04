@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectToDatabase from '@/lib/db';
-import Application from '@/models/Application';
+import Application, { ApplicationDocument } from '@/models/Application';
 import { model } from '@/lib/gemini';
 import { z } from 'zod';
 
@@ -22,9 +22,8 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     // Fetch the application
-    const application = await Application.findOne({
+    const application = await Application.findOne<ApplicationDocument>({
       _id: applicationId,
-      // @ts-expect-error - session.user.id is added in auth.ts
       userId: session.user.id,
     });
 
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
     });
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+      return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
 
     return NextResponse.json({
