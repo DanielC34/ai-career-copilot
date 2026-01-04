@@ -5,6 +5,7 @@ import User, { UserDocument } from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
+// Function to get user by email
 async function getUser(email: string) {
     await connectToDatabase();
     const user = await User.findOne<UserDocument>({ email }).select('+password');
